@@ -8,7 +8,7 @@
 data/
 tests/
 exps/
-demo/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
