@@ -15,10 +15,17 @@ from scenedetect.detectors import ContentDetector
 from model.faceDetector.s3fd import S3FD
 from talkNet import talkNet
 
+def get_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
 warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(description = "TalkNet Demo or Columnbia ASD Evaluation")
-
+parser.add_argument('--device', type=str, default=None, help='cuda | mps | cpu')
 parser.add_argument('--videoName',             type=str, default="001",   help='Demo video name')
 parser.add_argument('--videoFolder',           type=str, default="demo",  help='Path for inputs, tmps and outputs')
 parser.add_argument('--pretrainModel',         type=str, default="pretrain_TalkSet.model",   help='Path for the pretrained TalkNet model')
@@ -41,6 +48,12 @@ parser.add_argument('--segmentThreshold',      type=float, default=0.0,  help='S
 parser.add_argument('--segmentMinDuration',    type=float, default=0.5,  help='Minimum segment duration in seconds')
 
 args = parser.parse_args()
+
+if args.device is None:
+    args.device = get_device()
+
+DEVICE = torch.device(args.device)
+print(f"[INFO] Using device: {DEVICE}")
 
 if os.path.isfile(args.pretrainModel) == False: # Download the pretrained model
     Link = "1AbN9fCf9IexMxEKXLQY2KYBlb-IhSEea"
@@ -98,7 +111,7 @@ def scene_detect(args):
 
 def inference_video(args):
 	# GPU: Face detection, output is the list contains the face location and score in this frame
-	DET = S3FD(device='cpu')
+	DET = S3FD(device=args.device)
 	flist = glob.glob(os.path.join(args.pyframesPath, '*.jpg'))
 	flist.sort()
 	dets = []
@@ -214,6 +227,7 @@ def evaluate_network(files, args):
 	s = talkNet()
 	s.loadParameters(args.pretrainModel)
 	sys.stderr.write("Model %s loaded from previous state! \r\n"%args.pretrainModel)
+	s.model.to(DEVICE)
 	s.eval()
 	allScores = []
 	# durationSet = {1,2,4,6} # To make the result more reliable
@@ -244,8 +258,8 @@ def evaluate_network(files, args):
 			scores = []
 			with torch.no_grad():
 				for i in range(batchSize):
-					inputA = torch.FloatTensor(audioFeature[i * duration * 100:(i+1) * duration * 100,:]).unsqueeze(0)
-					inputV = torch.FloatTensor(videoFeature[i * duration * 25: (i+1) * duration * 25,:,:]).unsqueeze(0)
+					inputA = torch.FloatTensor(audioFeature[i * duration * 100:(i+1) * duration * 100, :]).unsqueeze(0).to(DEVICE)
+					inputV = torch.FloatTensor(videoFeature[i * duration * 25:(i+1) * duration * 25, :, :]).unsqueeze(0).to(DEVICE)
 					embedA = s.model.forward_audio_frontend(inputA)
 					embedV = s.model.forward_visual_frontend(inputV)	
 					embedA, embedV = s.model.forward_cross_attention(embedA, embedV)
