@@ -114,7 +114,8 @@ if args.hf_dataset:
         data_dir=args.hf_subset,
         split="train",
         streaming=True,
-        token=args.hf_token
+        token=args.hf_token,
+        decode=False
     )
 
     for i, sample in enumerate(ds, 1):
