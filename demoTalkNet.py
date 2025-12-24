@@ -542,7 +542,7 @@ def main():
 	sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " Scores extracted and saved in %s \r\n" %args.pyworkPath)
 
 	if args.evalCol == True:
-		evaluate_col_ASD(vidTracks, scores, args) # The columnbia video is too big for visualization. You can still add the `visualization` funcition here if you want
+		evaluate_col_ASD(vidTracks, scores, args)
 		quit()
 	else:
 		# Extract speaking segments if requested
@@ -557,7 +557,16 @@ def main():
 		
 		# Visualization, save the result as the new video	
 		# visualization(vidTracks, scores, args)
-		print("Processing complete. Visualization skipped.")	
+		print("Processing complete. Visualization skipped.")
+		
+		# Clean up temporary directories
+		if os.path.exists(args.pyframesPath):
+			rmtree(args.pyframesPath)
+			sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " Cleaned up frames from %s \r\n" %args.pyframesPath)
+		
+		if os.path.exists(args.pyaviPath):
+			rmtree(args.pyaviPath)
+			sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " Cleaned up video/audio from %s \r\n" %args.pyaviPath)	
 
 if __name__ == '__main__':
     main()
