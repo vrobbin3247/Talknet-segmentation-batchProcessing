@@ -32,6 +32,14 @@ parser.add_argument('--videoExtensions', type=str, default="mp4,avi,mov,mkv")
 
 args = parser.parse_args()
 
+def normalize_repo_id(repo_id):
+    # Allow user/repo but strip user safely
+    if "/" in repo_id:
+        return repo_id.split("/")[-1]
+    return repo_id
+
+args.hf_output_repo = normalize_repo_id(args.hf_output_repo)
+
 # -----------------------------
 # Validate input mode
 # -----------------------------
