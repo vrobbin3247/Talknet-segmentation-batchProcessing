@@ -32,13 +32,25 @@ parser.add_argument('--videoExtensions', type=str, default="mp4,avi,mov,mkv")
 
 args = parser.parse_args()
 
-def normalize_repo_id(repo_id):
-    # Allow user/repo but strip user safely
-    if "/" in repo_id:
-        return repo_id.split("/")[-1]
-    return repo_id
+def normalize_repo_id(repo_id, repo_type, username):
+    if repo_type == "dataset":
+        # datasets MUST have namespace
+        if "/" not in repo_id:
+            return f"{username}/{repo_id}"
+        return repo_id
+    else:
+        # models/spaces can be bare
+        return repo_id.split("/")[-1] if "/" in repo_id else repo_id
 
-args.hf_output_repo = normalize_repo_id(args.hf_output_repo)
+HF_USERNAME = "vaibhavm3247"  # hardcode or infer via whoami()
+
+args.hf_output_repo = normalize_repo_id(
+    args.hf_output_repo,
+    args.repo_type,
+    HF_USERNAME
+)
+
+print(f"HF repo resolved to: {args.hf_output_repo} ({args.repo_type})")
 
 # -----------------------------
 # Validate input mode
@@ -82,7 +94,7 @@ def create_or_get_repo(repo_id, repo_type='dataset', private=False, token=None):
             print(f"  Creating new repo: {repo_id}")
             api.create_repo(
                 repo_id=repo_id,
-                repo_type=repo_type,
+                repo_type='dataset',
                 private=private,
                 exist_ok=True
             )
@@ -117,10 +129,9 @@ def upload_video_to_hf(video_name, video_folder_path):
         print(f"  Uploading folder structure...")
         api.upload_folder(
             folder_path=video_folder_path,
-            path_in_repo=video_name,  # This creates: repo/VideoName/...
+            path_in_repo=video_name,
             repo_id=args.hf_output_repo,
             repo_type=args.repo_type,
-            token=args.hf_token,
         )
         
         print(f"  ✓ Successfully uploaded {video_name}")
