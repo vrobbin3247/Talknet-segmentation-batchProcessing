@@ -19,7 +19,7 @@ def get_device():
     if torch.cuda.is_available():
         return "cuda"
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps"
+        return "cpu"
     return "cpu"
 
 warnings.filterwarnings("ignore")
@@ -229,6 +229,7 @@ def evaluate_network(files, args):
 	sys.stderr.write("Model %s loaded from previous state! \r\n"%args.pretrainModel)
 	s.model.to(DEVICE)
 	s.eval()
+	s.lossAV.to(DEVICE)
 	allScores = []
 	# durationSet = {1,2,4,6} # To make the result more reliable
 	durationSet = {1,1,1,2,2,2,3,3,4,5,6} # Use this line can get more reliable result
